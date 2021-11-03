@@ -7,12 +7,14 @@ Prerequisites
 
 For Centos/Redhat:
 
-```sudo dnf install unixODBC-devel gcc-c++ python-devel
+```
+sudo dnf install unixODBC-devel gcc-c++ python-devel
 ``` 
 
 For Ubuntu/Debian:
 
-```sudo apt-get install cpp unixodbc-dev python-dev
+```
+sudo apt-get install cpp unixodbc-dev python-dev
 ``` 
 
 Usage
