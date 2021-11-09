@@ -1,8 +1,13 @@
 sqlalchemy-gpudb
 ================
 
+Notice
+-----
 
-Prerequisites
+This is a project that is under heavy modification and is not considered GA yet. 
+
+
+Pre-reqs
 -----
 
 For Centos/Redhat:
@@ -21,7 +26,7 @@ Usage
 -----
 
 0. Copy the Kinetica .so to the /etc/ file of the server where the SQLAlchemy engine will execute (e.g. SuperSet's execution environment)
-1. `pip install git+https://github.com/ajduberstein/sqlalchemy_gpudb`
+1. `pip install git+https://github.com/kineticadb/kinetica-sqlalchemy`
 2. Register the dialect and run SQL, as you can see in `test_program.py` in this directory.
 
 TODO
