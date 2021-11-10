@@ -14,7 +14,7 @@ Notice
 This is a project that is under heavy modification and is not considered GA yet. 
 
 
-Pre-Requisite System Packages
+Prerequisite System Packages
 -----
 
 For Centos/Redhat:
@@ -32,7 +32,7 @@ sudo apt-get install cpp unixodbc-dev python-dev
 Configuration and Installation
 -----
 
-1. Update the odbc.ini file with the Kinetica connection and then copy the driver library and unix-odbc configuration files to to the /etc/ file of the server where the SQLAlchemy engine will execute:
+1. Update the odbc.ini file with the Kinetica connection and then copy the driver library and unix-odbc configuration files to to the /etc/ file of the environment where the SQLAlchemy engine will execute:
    
    For Centos/Redhat:
 
@@ -63,7 +63,6 @@ pip install git+https://github.com/kineticadb/kinetica-sqlalchemy
 Create a SQL Alchemy Connnection
 --------------------------
 
-To create a connector, the following works well:
 
 ```
 import sa_gpudb
@@ -84,7 +83,7 @@ sqlalchemy.create_engine(
 Errors and solutions
 --------------------
 
-- `missing sql.h`: Need to install development packages please see pre reqs section 
+- `missing sql.h`: Need to install development packages please see prerequisite section 
  
 - `[unixODBC][Driver Manager]Data source name not found, and no default driver specified`: No named connection in the .ini file
 
