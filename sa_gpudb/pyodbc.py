@@ -95,7 +95,7 @@ for unix + PyODBC.
 
 """
 
-from .base import MSExecutionContext, MSDialect, VARBINARY
+from .base import MSExecutionContext, KineticaBaseDialect, VARBINARY
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
 from sqlalchemy.engine import reflection
 from sqlalchemy import types as sqltypes, util
@@ -235,12 +235,12 @@ class MSExecutionContext_pyodbc(MSExecutionContext):
             super(MSExecutionContext_pyodbc, self).post_exec()
 
 
-class MSDialect_pyodbc(PyODBCConnector, MSDialect):
+class KineticaBaseDialect_pyodbc(PyODBCConnector, KineticaBaseDialect):
 
     execution_ctx_cls = MSExecutionContext_pyodbc
 
     colspecs = util.update_copy(
-        MSDialect.colspecs,
+        KineticaBaseDialect.colspecs,
         {
             sqltypes.Numeric: _MSNumeric_pyodbc,
             sqltypes.Float: _MSFloat_pyodbc,
@@ -252,7 +252,7 @@ class MSDialect_pyodbc(PyODBCConnector, MSDialect):
     def __init__(self, description_encoding=None, **params):
         if "description_encoding" in params:
             self.description_encoding = params.pop("description_encoding")
-        super(MSDialect_pyodbc, self).__init__(**params)
+        super(KineticaBaseDialect_pyodbc, self).__init__(**params)
         self.use_scope_identity = self.use_scope_identity and self.dbapi and hasattr(self.dbapi.Cursor, "nextset")
         self._need_decimal_fix = self.dbapi and self._dbapi_version() < (2, 1, 8)
 
@@ -264,13 +264,13 @@ class MSDialect_pyodbc(PyODBCConnector, MSDialect):
         return False
 
 
-class KineticaDialect(MSDialect_pyodbc):
+class KineticaDialect(KineticaBaseDialect_pyodbc):
     # Good reference code: https://github.com/googleapis/python-bigquery-sqlalchemy/blob/main/sqlalchemy_bigquery/base.py#L694
     name = "kinetica"
     driver = "kinetica"
 
     def __init__(self, **kwargs):
-        MSDialect_pyodbc.__init__(self, **kwargs)
+      KineticaBaseDialect_pyodbc.__init__(self, **kwargs)
 
 
 dialect = KineticaDialect
