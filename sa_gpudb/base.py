@@ -1603,7 +1603,7 @@ def _owner_plus_db(dialect, schema):
 
 
 class MSDialect(default.DefaultDialect):
-    name = "mssql"
+    name = "kinetica" #test change
     supports_default_values = True
     supports_empty_insert = False
     execution_ctx_cls = MSExecutionContext
@@ -1666,19 +1666,19 @@ class MSDialect(default.DefaultDialect):
             self.legacy_schema_aliasing = legacy_schema_aliasing
             self._warn_schema_aliasing = False
 
-        super(MSDialect, self).__init__(**opts)
+        #super(MSDialect, self).__init__(**opts) #test change
 
     def do_savepoint(self, connection, name):
         # give the DBAPI a push
-        connection.execute("IF @@TRANCOUNT = 0 BEGIN TRANSACTION")
-        super(MSDialect, self).do_savepoint(connection, name)
+        #connection.execute("IF @@TRANCOUNT = 0 BEGIN TRANSACTION")
+        #super(MSDialect, self).do_savepoint(connection, name)
 
     def do_release_savepoint(self, connection, name):
         # SQL Server does not support RELEASE SAVEPOINT
         pass
 
     def initialize(self, connection):
-        super(MSDialect, self).initialize(connection)
+        #super(MSDialect, self).initialize(connection)
         self._setup_version_attributes()
 
     def _setup_version_attributes(self): 
@@ -1716,7 +1716,7 @@ class MSDialect(default.DefaultDialect):
         # Use ODBC to get list of tables and extract schemas
         for table in cursor.tables():
             if not table.table_cat in schema_names:
-                schema_names.append(table.table_cat)
+                schema_names.append(table.table_schem)
 
         schema_names.sort()
         return schema_names
