@@ -486,7 +486,7 @@ from sqlalchemy.types import (
 )
 
 from sqlalchemy.util import update_wrapper
-from . import information_schema as ischema
+#from . import information_schema as ischema
 
 # Column types from ODBC get columns response
 ODBC_TYPE_BYTES = "BYTES"
@@ -1681,44 +1681,14 @@ class MSDialect(default.DefaultDialect):
         super(MSDialect, self).initialize(connection)
         self._setup_version_attributes()
 
-    def _setup_version_attributes(self):
-        # if self.server_version_info[0] not in list(range(8, 17)):
-        # FreeTDS with version 4.2 seems to report here
-        # a number like "95.10.255".  Don't know what
-        # that is.  So emit warning.
-        # Use TDS Version 7.0 through 7.3, per the MS information here:
-        # https://msdn.microsoft.com/en-us/library/dd339982.aspx
-        # and FreeTDS information here (7.3 highest supported version):
-        # http://www.freetds.org/userguide/choosingtdsprotocol.htm
-        # util.warn(
-        #     "Unrecognized server version info '%s'.   Version specific "
-        #     "behaviors may not function properly.   If using ODBC "
-        #     "with FreeTDS, ensure TDS_VERSION 7.0 through 7.3, not "
-        #     "4.2, is configured in the FreeTDS configuration." %
-        #     ".".join(str(x) for x in self.server_version_info))
-        if self.server_version_info >= MS_2005_VERSION and "implicit_returning" not in self.__dict__:
-            self.implicit_returning = True
-        if self.server_version_info >= MS_2008_VERSION:
-            self.supports_multivalues_insert = True
-        if self.deprecate_large_types is None:
-            self.deprecate_large_types = self.server_version_info >= MS_2012_VERSION
-
+    def _setup_version_attributes(self): 
+        self.implicit_returning = True
+        self.supports_multivalues_insert = True
+ 
     def _get_default_schema_name(self, connection):
-        if self.server_version_info < MS_2005_VERSION:
-            return self.schema_name
+        return self.schema_name
 
-        query = sql.text(
-            """
-            SELECT default_schema_name FROM
-            sys.database_principals
-            WHERE principal_id=database_principal_id()
-        """
-        )
-        default_schema_name = connection.scalar(query)
-        if default_schema_name is not None:
-            return util.text_type(default_schema_name)
-        else:
-            return self.schema_name
+       
 
     @_db_plus_owner
     def has_table(self, connection, tablename, dbname, owner, schema):
@@ -1778,76 +1748,15 @@ class MSDialect(default.DefaultDialect):
     @reflection.cache
     @_db_plus_owner
     def get_indexes(self, connection, tablename, dbname, owner, schema, **kw):
-        # using system catalogs, don't support index reflection
-        # below MS 2005
-        if self.server_version_info < MS_2005_VERSION:
-            return []
+        return []
 
-        rp = connection.execute(
-            sql.text(
-                "select ind.index_id, ind.is_unique, ind.name "
-                "from sys.indexes as ind join sys.tables as tab on "
-                "ind.object_id=tab.object_id "
-                "join sys.schemas as sch on sch.schema_id=tab.schema_id "
-                "where tab.name = :tabname "
-                "and sch.name=:schname "
-                "and ind.is_primary_key=0",
-                bindparams=[
-                    sql.bindparam("tabname", tablename, sqltypes.String(convert_unicode=True)),
-                    sql.bindparam("schname", owner, sqltypes.String(convert_unicode=True)),
-                ],
-                typemap={"name": sqltypes.Unicode()},
-            )
-        )
-        indexes = {}
-        for row in rp:
-            indexes[row["index_id"]] = {"name": row["name"], "unique": row["is_unique"] == 1, "column_names": []}
-        rp = connection.execute(
-            sql.text(
-                "select ind_col.index_id, ind_col.object_id, col.name "
-                "from sys.columns as col "
-                "join sys.tables as tab on tab.object_id=col.object_id "
-                "join sys.index_columns as ind_col on "
-                "(ind_col.column_id=col.column_id and "
-                "ind_col.object_id=tab.object_id) "
-                "join sys.schemas as sch on sch.schema_id=tab.schema_id "
-                "where tab.name=:tabname "
-                "and sch.name=:schname",
-                bindparams=[
-                    sql.bindparam("tabname", tablename, sqltypes.String(convert_unicode=True)),
-                    sql.bindparam("schname", owner, sqltypes.String(convert_unicode=True)),
-                ],
-                typemap={"name": sqltypes.Unicode()},
-            ),
-        )
-        for row in rp:
-            if row["index_id"] in indexes:
-                indexes[row["index_id"]]["column_names"].append(row["name"])
-
-        return list(indexes.values())
+        
 
     @reflection.cache
     @_db_plus_owner
     def get_view_definition(self, connection, viewname, dbname, owner, schema, **kw):
-        rp = connection.execute(
-            sql.text(
-                "select definition from sys.sql_modules as mod, "
-                "sys.views as views, "
-                "sys.schemas as sch"
-                " where "
-                "mod.object_id=views.object_id and "
-                "views.schema_id=sch.schema_id and "
-                "views.name=:viewname and sch.name=:schname",
-                bindparams=[
-                    sql.bindparam("viewname", viewname, sqltypes.String(convert_unicode=True)),
-                    sql.bindparam("schname", owner, sqltypes.String(convert_unicode=True)),
-                ],
-            )
-        )
-
-        if rp:
-            view_def = rp.scalar()
-            return view_def
+        return ""
+      
 
     @reflection.cache
     @_db_plus_owner
@@ -1968,62 +1877,4 @@ class MSDialect(default.DefaultDialect):
         # TODO: once FK info is exposed via /show/table, read it here
         return []
 
-        RR = ischema.ref_constraints
-        C = ischema.key_constraints.alias("C")
-        R = ischema.key_constraints.alias("R")
-
-        # Foreign key constraints
-        s = sql.select(
-            [
-                C.c.column_name,
-                R.c.table_schema,
-                R.c.table_name,
-                R.c.column_name,
-                RR.c.constraint_name,
-                RR.c.match_option,
-                RR.c.update_rule,
-                RR.c.delete_rule,
-            ],
-            sql.and_(
-                C.c.table_name == tablename,
-                C.c.table_schema == owner,
-                C.c.constraint_name == RR.c.constraint_name,
-                R.c.constraint_name == RR.c.unique_constraint_name,
-                C.c.ordinal_position == R.c.ordinal_position,
-            ),
-            order_by=[RR.c.constraint_name, R.c.ordinal_position],
-        )
-
-        # group rows by constraint ID, to handle multi-column FKs
-        fkeys = []
-        fknm, scols, rcols = (None, [], [])
-
-        def fkey_rec():
-            return {
-                "name": None,
-                "constrained_columns": [],
-                "referred_schema": None,
-                "referred_table": None,
-                "referred_columns": [],
-            }
-
-        fkeys = util.defaultdict(fkey_rec)
-
-        for r in connection.execute(s).fetchall():
-            scol, rschema, rtbl, rcol, rfknm, fkmatch, fkuprule, fkdelrule = r
-
-            rec = fkeys[rfknm]
-            rec["name"] = rfknm
-            if not rec["referred_table"]:
-                rec["referred_table"] = rtbl
-                if schema is not None or owner != rschema:
-                    if dbname:
-                        rschema = dbname + "." + rschema
-                    rec["referred_schema"] = rschema
-
-            local_cols, remote_cols = rec["constrained_columns"], rec["referred_columns"]
-
-            local_cols.append(scol)
-            remote_cols.append(rcol)
-
-        return list(fkeys.values())
+        
